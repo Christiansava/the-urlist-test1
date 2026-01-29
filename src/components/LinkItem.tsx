@@ -5,9 +5,10 @@ interface LinkItemProps {
   link: Link;
   onUpdate: (id: number, data: Partial<Link>) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
+  isOwner?: boolean;
 }
 
-export default function LinkItem({ link, onUpdate, onDelete }: LinkItemProps) {
+export default function LinkItem({ link, onUpdate, onDelete, isOwner = true }: LinkItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editUrl, setEditUrl] = useState(link.url);
   const [loading, setLoading] = useState(false);
@@ -40,7 +41,7 @@ export default function LinkItem({ link, onUpdate, onDelete }: LinkItemProps) {
     }
   })();
 
-  if (isEditing) {
+  if (isEditing && isOwner) {
     return (
       <div className="p-4 bg-white border border-gray-200 rounded-xl">
         <input
@@ -103,41 +104,43 @@ export default function LinkItem({ link, onUpdate, onDelete }: LinkItemProps) {
             <p className="text-xs text-gray-400 mt-1">{domain}</p>
           </a>
         </div>
-        <div className="flex-shrink-0 flex items-start gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={() => setIsEditing(true)}
-            className="p-2 text-gray-400 hover:text-[#15BFAE] transition-colors"
-            title="Edit link"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+        {isOwner && (
+          <div className="flex-shrink-0 flex items-start gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="p-2 text-gray-400 hover:text-[#15BFAE] transition-colors"
+              title="Edit link"
             >
-              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-            </svg>
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={loading}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
-            title="Delete link"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={loading}
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+              title="Delete link"
             >
-              <path
-                fillRule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-        </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
