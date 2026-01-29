@@ -8,6 +8,7 @@ export default function CreateList({ onCreated }: CreateListProps) {
   const [title, setTitle] = useState("");
   const [customSlug, setCustomSlug] = useState("");
   const [description, setDescription] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,6 +25,7 @@ export default function CreateList({ onCreated }: CreateListProps) {
           title: title || "My Link List",
           slug: customSlug || undefined,
           description: description || undefined,
+          is_private: isPrivate,
         }),
       });
 
@@ -103,6 +105,23 @@ export default function CreateList({ onCreated }: CreateListProps) {
           rows={3}
           className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-[#15BFAE] focus:ring-2 focus:ring-[#15BFAE]/20 outline-none transition-all resize-none"
         />
+      </div>
+
+      <div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(e) => setIsPrivate(e.target.checked)}
+            className="w-4 h-4 text-[#15BFAE] bg-gray-100 border-gray-300 rounded focus:ring-[#15BFAE] focus:ring-2"
+          />
+          <span className="text-sm font-medium text-gray-700">
+            Make this list private
+          </span>
+        </label>
+        <p className="text-xs text-gray-500 mt-1 ml-6">
+          Private lists are only visible to you
+        </p>
       </div>
 
       {error && (
