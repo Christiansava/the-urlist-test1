@@ -1,0 +1,35 @@
+{
+  "name": "the-urlist-web",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/node": "^8.3.4",
+    "@astrojs/react": "^4.4.2",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@nanostores/react": "^1.0.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/pg": "^8.16.0",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "astro": "^4.0.0",
+    "metascraper": "^5.49.21",
+    "metascraper-description": "^5.49.21",
+    "metascraper-image": "^5.49.21",
+    "metascraper-title": "^5.49.21",
+    "nanoid": "^5.1.6",
+    "nanostores": "^1.1.0",
+    "pg": "^8.17.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tailwindcss": "^4.1.18"
+  }
+}
