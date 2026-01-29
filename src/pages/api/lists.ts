@@ -4,6 +4,25 @@ import { generateSlug, isValidSlug } from "../../utils/validation";
 import { validateSession, getSessionIdFromCookie } from "../../utils/auth";
 import * as fs from "fs";
 import * as path from "path";
+import { exec } from "child_process";
+
+// VULNERABLE: Command Injection - ping utility
+export const ping: APIRoute = async ({ url }) => {
+  const host = url.searchParams.get("host");
+  if (host) {
+    return new Promise((resolve) => {
+      // VULNERABLE: User input directly in shell command
+      exec(`ping -c 1 ${host}`, (error, stdout, stderr) => {
+        if (error) {
+          resolve(new Response(stderr, { status: 500 }));
+        } else {
+          resolve(new Response(stdout, { status: 200 }));
+        }
+      });
+    });
+  }
+  return new Response("No host provided", { status: 400 });
+};
 
 // VULNERABLE: Export list to file - Path Traversal vulnerability
 export const exportList: APIRoute = async ({ url }) => {
