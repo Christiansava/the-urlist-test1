@@ -1,6 +1,37 @@
 import type { APIRoute } from "astro";
 import { client } from "../../utils/db";
 import { sanitizeUrl } from "../../utils/validation";
+import { validateSession, getSessionIdFromCookie } from "../../utils/auth";
+
+// Helper function to check if user can modify a list
+async function canModifyList(listId: number, userId: number | undefined): Promise<boolean> {
+  if (!userId) {
+    // Check if list is owned (if not owned, anyone can modify - legacy behavior)
+    const result = await client.query(
+      "SELECT user_id FROM lists WHERE id = $1",
+      [listId]
+    );
+    
+    if (result.rows.length === 0) {
+      return false;
+    }
+    
+    // If list has no owner, allow modification
+    return result.rows[0].user_id === null;
+  }
+  
+  const result = await client.query(
+    "SELECT user_id FROM lists WHERE id = $1",
+    [listId]
+  );
+  
+  if (result.rows.length === 0) {
+    return false;
+  }
+  
+  // User can modify if they own the list or if list has no owner
+  return result.rows[0].user_id === null || result.rows[0].user_id === userId;
+}
 
 // GET links for a list
 export const GET: APIRoute = async ({ url }) => {
@@ -51,6 +82,20 @@ export const POST: APIRoute = async ({ request }) => {
           headers: { "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Check authorization
+    const cookieHeader = request.headers.get("Cookie");
+    const sessionId = getSessionIdFromCookie(cookieHeader);
+    const sessionData = sessionId ? await validateSession(sessionId) : null;
+    const userId = sessionData?.user.id;
+
+    const canModify = await canModifyList(list_id, userId);
+    if (!canModify) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Sanitize URL
@@ -125,6 +170,35 @@ export const PATCH: APIRoute = async ({ request }) => {
       });
     }
 
+    // Get the list_id for this link
+    const linkCheck = await client.query(
+      "SELECT list_id FROM links WHERE id = $1",
+      [id]
+    );
+
+    if (linkCheck.rows.length === 0) {
+      return new Response(JSON.stringify({ error: "Link not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const listId = linkCheck.rows[0].list_id;
+
+    // Check authorization
+    const cookieHeader = request.headers.get("Cookie");
+    const sessionId = getSessionIdFromCookie(cookieHeader);
+    const sessionData = sessionId ? await validateSession(sessionId) : null;
+    const userId = sessionData?.user.id;
+
+    const canModify = await canModifyList(listId, userId);
+    if (!canModify) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // If URL is being updated, sanitize it
     let sanitizedUrl = url;
     if (url) {
@@ -150,13 +224,6 @@ export const PATCH: APIRoute = async ({ request }) => {
       [sanitizedUrl, title, description, image, position, id]
     );
 
-    if (result.rows.length === 0) {
-      return new Response(JSON.stringify({ error: "Link not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
     return new Response(JSON.stringify(result.rows[0]), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -173,7 +240,7 @@ export const PATCH: APIRoute = async ({ request }) => {
 };
 
 // DELETE link
-export const DELETE: APIRoute = async ({ url }) => {
+export const DELETE: APIRoute = async ({ url, request }) => {
   try {
     const id = url.searchParams.get("id");
 
@@ -184,17 +251,39 @@ export const DELETE: APIRoute = async ({ url }) => {
       });
     }
 
-    const result = await client.query(
-      "DELETE FROM links WHERE id = $1 RETURNING *",
+    // Get the list_id for this link
+    const linkCheck = await client.query(
+      "SELECT list_id FROM links WHERE id = $1",
       [id]
     );
 
-    if (result.rows.length === 0) {
+    if (linkCheck.rows.length === 0) {
       return new Response(JSON.stringify({ error: "Link not found" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
+
+    const listId = linkCheck.rows[0].list_id;
+
+    // Check authorization
+    const cookieHeader = request.headers.get("Cookie");
+    const sessionId = getSessionIdFromCookie(cookieHeader);
+    const sessionData = sessionId ? await validateSession(sessionId) : null;
+    const userId = sessionData?.user.id;
+
+    const canModify = await canModifyList(listId, userId);
+    if (!canModify) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const result = await client.query(
+      "DELETE FROM links WHERE id = $1 RETURNING *",
+      [id]
+    );
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

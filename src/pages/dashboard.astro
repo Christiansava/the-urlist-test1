@@ -10,24 +10,23 @@ import type { List } from "../types/link";
 const cookieHeader = Astro.request.headers.get("Cookie");
 const sessionId = getSessionIdFromCookie(cookieHeader);
 const sessionData = sessionId ? await validateSession(sessionId) : null;
-const currentUserId = sessionData?.user.id;
 
-// Fetch lists - show public lists and user's own lists
-let query = "SELECT * FROM lists WHERE is_private = FALSE";
-const params: any[] = [];
-
-if (currentUserId) {
-  query = "SELECT * FROM lists WHERE is_private = FALSE OR user_id = $1";
-  params.push(currentUserId);
+// Redirect to home if not logged in
+if (!sessionData) {
+  return Astro.redirect("/");
 }
 
-query += " ORDER BY created_at DESC";
+const currentUserId = sessionData.user.id;
 
-const result = await client.query(query, params);
+// Fetch only user's lists
+const result = await client.query(
+  "SELECT * FROM lists WHERE user_id = $1 ORDER BY created_at DESC",
+  [currentUserId]
+);
 const lists: List[] = result.rows;
 ---
 
-<Layout title="The Urlist - Share Your Links">
+<Layout title="My Lists - The Urlist">
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <header class="bg-white border-b border-gray-200">
@@ -64,9 +63,9 @@ const lists: List[] = result.rows;
     <!-- Main Content -->
     <main class="max-w-4xl mx-auto px-4 py-8">
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">Your Link Lists</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">My Lists</h1>
         <p class="text-gray-600">
-          Create and share collections of links with anyone.
+          Manage your personal and private link collections.
         </p>
       </div>
 
