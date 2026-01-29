@@ -12,21 +12,6 @@ import { exec } from "child_process";
     if (filename) {
       // VULNERABLE: User-controlled path without sanitization
       const filePath = path.join("/tmp/exports", filename);
-      const data = fs.readFileSync(filePath, "utf-8");
-      return new Response(data, { status: 200 });
-    }
-    return new Response("No filename provided", { status: 400 });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: (error as Error).message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-        } else {
-          resolve(new Response(stdout, { status: 200 }));
         }
       });
     });
