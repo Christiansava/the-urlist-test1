@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ url, request }) => {
 
     // Get all lists - show public lists and user's own lists
     let query = "SELECT * FROM lists WHERE is_private = FALSE";
-    const params: any[] = [];
+    const params: (number | boolean)[] = [];
 
     if (currentUserId) {
       query = "SELECT * FROM lists WHERE is_private = FALSE OR user_id = $1";

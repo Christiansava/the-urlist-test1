@@ -75,10 +75,20 @@ export async function invalidateUserSessions(userId: number): Promise<void> {
 }
 
 export function setSessionCookie(headers: Headers, sessionId: string, expiresAt: Date): void {
-  headers.set(
-    "Set-Cookie",
-    `${SESSION_COOKIE_NAME}=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Expires=${expiresAt.toUTCString()}`
-  );
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieParts = [
+    `${SESSION_COOKIE_NAME}=${sessionId}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Expires=${expiresAt.toUTCString()}`,
+  ];
+  
+  if (isProduction) {
+    cookieParts.push("Secure");
+  }
+  
+  headers.set("Set-Cookie", cookieParts.join("; "));
 }
 
 export function deleteSessionCookie(headers: Headers): void {

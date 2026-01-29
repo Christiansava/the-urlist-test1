@@ -5,21 +5,6 @@ import { validateSession, getSessionIdFromCookie } from "../../utils/auth";
 
 // Helper function to check if user can modify a list
 async function canModifyList(listId: number, userId: number | undefined): Promise<boolean> {
-  if (!userId) {
-    // Check if list is owned (if not owned, anyone can modify - legacy behavior)
-    const result = await client.query(
-      "SELECT user_id FROM lists WHERE id = $1",
-      [listId]
-    );
-    
-    if (result.rows.length === 0) {
-      return false;
-    }
-    
-    // If list has no owner, allow modification
-    return result.rows[0].user_id === null;
-  }
-  
   const result = await client.query(
     "SELECT user_id FROM lists WHERE id = $1",
     [listId]
@@ -29,12 +14,19 @@ async function canModifyList(listId: number, userId: number | undefined): Promis
     return false;
   }
   
-  // User can modify if they own the list or if list has no owner
-  return result.rows[0].user_id === null || result.rows[0].user_id === userId;
+  const listUserId = result.rows[0].user_id;
+  
+  // List has no owner - anyone can modify (legacy behavior)
+  if (listUserId === null) {
+    return true;
+  }
+  
+  // User can modify if they own the list
+  return userId !== undefined && listUserId === userId;
 }
 
 // GET links for a list
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, request }) => {
   try {
     const listId = url.searchParams.get("list_id");
 
@@ -46,6 +38,35 @@ export const GET: APIRoute = async ({ url }) => {
           headers: { "Content-Type": "application/json" },
         }
       );
+    }
+
+    // Get current user
+    const cookieHeader = request.headers.get("Cookie");
+    const sessionId = getSessionIdFromCookie(cookieHeader);
+    const sessionData = sessionId ? await validateSession(sessionId) : null;
+    const currentUserId = sessionData?.user.id;
+
+    // Check if user has access to this list
+    const listCheck = await client.query(
+      "SELECT is_private, user_id FROM lists WHERE id = $1",
+      [listId]
+    );
+
+    if (listCheck.rows.length === 0) {
+      return new Response(JSON.stringify({ error: "List not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const list = listCheck.rows[0];
+
+    // If list is private and user is not the owner, deny access
+    if (list.is_private && list.user_id !== currentUserId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const result = await client.query(

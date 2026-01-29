@@ -10,6 +10,16 @@ export default function UserNav() {
     loadUser();
   }, []);
 
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
   if (!user) {
     return (
       <div className="flex items-center gap-2">
@@ -73,12 +83,12 @@ export default function UserNav() {
               My Lists
             </a>
             <hr className="my-1 border-gray-200" />
-            <a
-              href="/api/auth/logout"
-              className="block px-4 py-2 text-red-600 hover:bg-gray-100"
+            <button
+              onClick={handleLogout}
+              className="w-full text-left block px-4 py-2 text-red-600 hover:bg-gray-100"
             >
               Sign out
-            </a>
+            </button>
           </div>
         </>
       )}
