@@ -7,14 +7,24 @@ import * as path from "path";
 import { exec } from "child_process";
 
 // VULNERABLE: Command Injection - ping utility
-export const ping: APIRoute = async ({ url }) => {
-  const host = url.searchParams.get("host");
-  if (host) {
-    return new Promise((resolve) => {
-      // VULNERABLE: User input directly in shell command
-      exec(`ping -c 1 ${host}`, (error, stdout, stderr) => {
-        if (error) {
-          resolve(new Response(stderr, { status: 500 }));
+  try {
+    const filename = url.searchParams.get("filename");
+    if (filename) {
+      // VULNERABLE: User-controlled path without sanitization
+      const filePath = path.join("/tmp/exports", filename);
+      const data = fs.readFileSync(filePath, "utf-8");
+      return new Response(data, { status: 200 });
+    }
+    return new Response("No filename provided", { status: 400 });
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: (error as Error).message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
         } else {
           resolve(new Response(stdout, { status: 200 }));
         }
