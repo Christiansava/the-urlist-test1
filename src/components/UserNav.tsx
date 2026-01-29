@@ -25,15 +25,9 @@ export default function UserNav() {
       <div className="flex items-center gap-2">
         <a
           href="/api/auth/github"
-          className="px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          Sign in with GitHub
-        </a>
-        <a
-          href="/api/auth/google"
           className="px-4 py-2 bg-[#15BFAE] text-white font-medium rounded-lg hover:bg-[#13a89a] transition-colors"
         >
-          Sign in with Google
+          Sign in with GitHub
         </a>
       </div>
     );

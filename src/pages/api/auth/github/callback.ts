@@ -12,11 +12,12 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
 
   try {
     const tokens = await github.validateAuthorizationCode(code);
+    const accessToken = tokens.accessToken();
     
     // Fetch user info from GitHub
     const userResponse = await fetch("https://api.github.com/user", {
       headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -29,19 +30,23 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     // Fetch user emails (to get verified email)
     const emailsResponse = await fetch("https://api.github.com/user/emails", {
       headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
     let email = githubUser.email;
-    if (!email && emailsResponse.ok) {
+    
+    // Always try to get email from the emails endpoint (handles private emails)
+    if (emailsResponse.ok) {
       const emails = await emailsResponse.json();
       const primaryEmail = emails.find((e: any) => e.primary && e.verified);
-      email = primaryEmail?.email || emails[0]?.email;
+      const verifiedEmail = emails.find((e: any) => e.verified);
+      email = primaryEmail?.email || verifiedEmail?.email || emails[0]?.email || email;
     }
 
+    // Fallback: use GitHub's noreply email
     if (!email) {
-      return new Response("No email found in GitHub account", { status: 400 });
+      email = `${githubUser.id}+${githubUser.login}@users.noreply.github.com`;
     }
 
     // Find or create user

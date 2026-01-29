@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { GitHub, Google } from "arctic";
 import { nanoid } from "nanoid";
 import { client } from "./db";
