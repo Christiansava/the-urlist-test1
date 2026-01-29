@@ -7,10 +7,22 @@ import { validateSession, getSessionIdFromCookie } from "../../utils/auth";
 export const GET: APIRoute = async ({ url, request }) => {
   try {
     const slug = url.searchParams.get("slug");
+    const search = url.searchParams.get("search");
     const cookieHeader = request.headers.get("Cookie");
     const sessionId = getSessionIdFromCookie(cookieHeader);
     const sessionData = sessionId ? await validateSession(sessionId) : null;
     const currentUserId = sessionData?.user.id;
+
+    // VULNERABLE: SQL Injection - search parameter directly concatenated
+    if (search) {
+      const result = await client.query(
+        "SELECT * FROM lists WHERE title LIKE '%" + search + "%' OR description LIKE '%" + search + "%'"
+      );
+      return new Response(JSON.stringify(result.rows), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     if (slug) {
       const result = await client.query(
