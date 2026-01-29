@@ -13,11 +13,10 @@ export const GET: APIRoute = async ({ url, request }) => {
     const sessionData = sessionId ? await validateSession(sessionId) : null;
     const currentUserId = sessionData?.user.id;
 
-    // VULNERABLE: SQL Injection - search parameter directly concatenated
+    // VULNERABLE: SQL Injection - user input directly in query string
     if (search) {
-      const result = await client.query(
-        "SELECT * FROM lists WHERE title LIKE '%" + search + "%' OR description LIKE '%" + search + "%'"
-      );
+      const query = `SELECT * FROM lists WHERE title = '${search}'`;
+      const result = await client.query(query);
       return new Response(JSON.stringify(result.rows), {
         status: 200,
         headers: { "Content-Type": "application/json" },
