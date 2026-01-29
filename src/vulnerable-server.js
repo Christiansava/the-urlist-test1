@@ -4,6 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
+function isLocalUrl(target, baseOrigin) {
+  try {
+    const resolved = new URL(target, baseOrigin);
+    return resolved.origin === baseOrigin;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Create a simple HTTP server for demo
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -76,8 +85,12 @@ const server = http.createServer((req, res) => {
   // ============================================
   if (url.pathname === '/redirect') {
     const target = params.get('url');
-    // BAD: Open redirect
-    res.writeHead(302, { Location: target });
+    const baseOrigin = 'http://' + req.headers.host;
+    let redirectLocation = '/';
+    if (target && isLocalUrl(target, baseOrigin)) {
+      redirectLocation = target;
+    }
+    res.writeHead(302, { Location: redirectLocation });
     res.end();
     return;
   }
