@@ -2,6 +2,20 @@ import type { APIRoute } from "astro";
 import { client } from "../../utils/db";
 import { generateSlug, isValidSlug } from "../../utils/validation";
 import { validateSession, getSessionIdFromCookie } from "../../utils/auth";
+import * as fs from "fs";
+import * as path from "path";
+
+// VULNERABLE: Export list to file - Path Traversal vulnerability
+export const exportList: APIRoute = async ({ url }) => {
+  const filename = url.searchParams.get("filename");
+  if (filename) {
+    // VULNERABLE: User-controlled path without sanitization
+    const filePath = path.join("/tmp/exports", filename);
+    const data = fs.readFileSync(filePath, "utf-8");
+    return new Response(data, { status: 200 });
+  }
+  return new Response("No filename provided", { status: 400 });
+};
 
 // GET all lists or single list by slug
 export const GET: APIRoute = async ({ url, request }) => {
