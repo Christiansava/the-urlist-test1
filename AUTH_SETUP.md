@@ -1,5 +1,5 @@
 # User Authentication Setup Guide
-wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
 This guide explains how to set up user authentication with GitHub and Google OAuth.
 
 ## Database Migration
