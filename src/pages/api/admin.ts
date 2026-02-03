@@ -1,18 +1,21 @@
 import type { APIRoute } from "astro";
 import { client } from "../../utils/db";
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import * as crypto from "crypto";
 
 // ===========================================
-// ⚠️ DEMO FILE - Contains intentional vulnerabilities
+// ⚠️ DEMO FILE - Contains intentional vulnerabilities for CodeQL testing
 // ===========================================
 
-// API Keys should be loaded from environment variables
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID || "";
-const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY || "";
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || "";
+// VULNERABILITY: Hardcoded credentials (CWE-798)
+const DB_PASSWORD = "admin123!@#";
+const API_SECRET = "sk_live_super_secret_key_12345";
+const ENCRYPTION_KEY = "mysupersecretkey";
+
+// Weak encryption settings
+const WEAK_ALGORITHM = "des";  // DES is considered weak
 
 // ============================================
 // VULNERABILITY 1: SQL Injection (CWE-89)
@@ -87,3 +90,80 @@ export const PATCH: APIRoute = async ({ request }) => {
     headers: { "Content-Type": "application/json" },
   });
 };
+// ============================================
+// VULNERABILITY 5: Cross-Site Scripting (XSS) - CWE-79
+// ============================================
+export const DELETE: APIRoute = async ({ url }) => {
+  const message = url.searchParams.get("message") || "Hello";
+  const username = url.searchParams.get("username") || "User";
+  
+  // VULNERABLE: User input directly embedded in HTML without sanitization
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head><title>Welcome</title></head>
+      <body>
+        <h1>Hello, ${username}!</h1>
+        <div class="message">${message}</div>
+        <script>
+          var userInput = "${username}";
+          document.write("Welcome back, " + userInput);
+        </script>
+      </body>
+    </html>
+  `;
+  
+  return new Response(html, {
+    status: 200,
+    headers: { "Content-Type": "text/html" },
+  });
+};
+
+// ============================================
+// VULNERABILITY 6: Weak Cryptography (CWE-327)
+// ============================================
+function encryptData(data: string): string {
+  // VULNERABLE: Using weak DES algorithm and MD5
+  const key = crypto.createHash('md5').update(ENCRYPTION_KEY).digest();
+  const iv = Buffer.alloc(8, 0); // Weak IV
+  const cipher = crypto.createCipheriv('des-cbc', key.slice(0, 8), iv);
+  return cipher.update(data, 'utf8', 'hex') + cipher.final('hex');
+}
+
+// ============================================
+// VULNERABILITY 7: Open Redirect (CWE-601)
+// ============================================
+export const OPTIONS: APIRoute = async ({ url }) => {
+  const redirectUrl = url.searchParams.get("next");
+  
+  if (redirectUrl) {
+    // VULNERABLE: Redirecting to user-controlled URL without validation
+    return new Response(null, {
+      status: 302,
+      headers: { "Location": redirectUrl },
+    });
+  }
+  
+  return new Response("No redirect URL", { status: 400 });
+};
+
+// ============================================
+// VULNERABILITY 8: Log Injection (CWE-117)
+// ============================================
+function logUserAction(username: string, action: string) {
+  // VULNERABLE: User input logged without sanitization
+  console.log(`[USER] ${username} performed action: ${action}`);
+}
+
+// ============================================
+// VULNERABILITY 9: Insecure Randomness (CWE-330)
+// ============================================
+function generateToken(): string {
+  // VULNERABLE: Using Math.random() for security-sensitive token
+  return Math.random().toString(36).substring(2, 15);
+}
+
+function generateSessionId(): string {
+  // VULNERABLE: Predictable session ID
+  return "session_" + Date.now().toString();
+}
