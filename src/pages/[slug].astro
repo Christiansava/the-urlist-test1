@@ -2,6 +2,8 @@
 import Layout from "../layouts/Layout.astro";
 import ListContainer from "../components/ListContainer";
 import ShareButton from "../components/ShareButton";
+import { QRCodeButton } from "../components/QRCodeButton";
+import DuplicateListButton from "../components/DuplicateListButton";
 import DeleteListButton from "../components/DeleteListButton";
 import UserNav from "../components/UserNav";
 import { client } from "../utils/db";
@@ -108,7 +110,16 @@ const isOwner = list.user_id === currentUserId || !list.user_id; // If no owner,
           {isOwner && (
             <div class="flex items-center gap-2">
               <ShareButton client:load url={pageUrl} />
+              <QRCodeButton client:load url={pageUrl} listName={list.name} />
+              <DuplicateListButton client:load listId={list.id} listTitle={list.title} />
               <DeleteListButton client:load listId={list.id} />
+            </div>
+          )}
+          {!isOwner && (
+            <div class="flex items-center gap-2">
+              <ShareButton client:load url={pageUrl} />
+              <QRCodeButton client:load url={pageUrl} listName={list.name} />
+              <DuplicateListButton client:load listId={list.id} listTitle={list.title} />
             </div>
           )}
         </div>
