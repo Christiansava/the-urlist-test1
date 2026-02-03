@@ -1,5 +1,5 @@
 # User Authentication Setup Guide
-postgresql://admin:SuperSecretPassword123!@db.example.com:5432/production_db
+
 This guide explains how to set up user authentication with GitHub and Google OAuth.
 
 ## Database Migration
